@@ -51,7 +51,7 @@ int main(int argc, char **argv){
 	
 	int i;
 	enum opt_boot optboot = NOTSET;
-	enum fs_type fstype = NOTSET;
+	enum fs_type fstype = NOFS;
 	FILE *fdfsout, fdbootsector;
 	struct stat stats;
 	char *fsout = NULL, *bootsector = NULL, opt;
@@ -73,7 +73,7 @@ int main(int argc, char **argv){
 
 			case 'b':
 
-				if (bootsector == NULL){
+				if (bootsector == NULL && optboot == NOTSET){
 					bootsector = optarg;
 				}else{
 					error(0, 0, "You cant specify two output files at the same time");
@@ -93,7 +93,7 @@ int main(int argc, char **argv){
 
 			case 'u':
 
-				if (optboot == NOTSET){
+				if (optboot == NOTSET && bootsector == NULL){
 					optboot = UFSBOOT;
 				}else{
 					error(0, 0,"You cant sepecify two bootloaders at the same time");
@@ -103,7 +103,7 @@ int main(int argc, char **argv){
 			
 			case 'n':
 				
-				if (optboot == NOTSET){
+				if (optboot == NOTSET && bootsector == NULL){
 					optboot = NOBOOT;
 				}else{
 					error(0, 0,"You cant sepecify two bootloaders at the same time");

@@ -19,6 +19,11 @@ typedef struct UFS_HEADER {
 
 }__attribute__((packed)) ufs_h;
 
-
+typedef enum fs_type {
+	
+	RESERVED = 0,
+	SBFS
+	
+} fs_type;
 
 #endif
