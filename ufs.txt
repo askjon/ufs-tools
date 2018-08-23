@@ -1,0 +1,49 @@
+The Unified Filesystem Standard or Ufs-Standard
+
+The Ufs-Sandard describes the first two sectors of a disk
+that adhere to the Standard as follows:
+
+//Start of the Disk:
+
+
+[8 byte] Are reserved for jmp instructions padded with nop instructions
+
+
+// ##### Start of the Ufs Header
+
+[4 byte] Describes the Filesystem Type
+[4 byte] Describes the Filesystem Version beeing used
+[8 byte] The maximal Number of bytes stored on disk, (if too large use 0xffffffffffffffff) 0 is invalid
+[8 byte] LBA Address of the Filesystem Header
+[8 byte] LBA Address of a Backup Filesystem Header
+[8 byte] LBA Address of the Extended Bootsector
+[8 byte] LBA Address of a Backup Extended Bootsector
+[8 byte] Checksum (xor The first 48 bytes of the header)
+
+// ##### End of the Ufs Header
+
+
+[446 byte] Reserved for Bootcode
+[2 byte] Bootsignature
+
+// End of the first Sector
+
+
+// ##### Start of the backup Ufs Header
+
+[4 byte] Describes the Filesystem Type
+[4 byte] Describes the Filesystem Version beeing used
+[8 byte] The maximal Number of bytes stored on disk, (if too large use 0xffffffffffffffff) 0 is invalid
+[8 byte] LBA Address of the Filesystem Header
+[8 byte] LBA Address of a Backup Filesystem Header
+[8 byte] LBA Address of the Extended Bootsector
+[8 byte] LBA Address of a Backup Extended Bootsector
+[8 byte] Checksum (xor The first 48 bytes of the header)
+
+// ##### End of the Backup Ufs Header
+
+
+[456 byte] Reserved for Secound sector Bootcode
+
+
+//End of the secound Sector
