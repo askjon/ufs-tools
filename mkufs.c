@@ -9,57 +9,31 @@
 #include <string.h>
 
 
-char *USE = "This is just a Test usage statement\nDon't use this software when this is printed !!!";
-
-enum opt_boot {
-	NOTSET = 0,
-	NOBOOT = 1,
-	UFSBOOT = 2
-};
-
-enum fs_type {
-	NOFS = 0,
-	SBFS
-};
+#include "ufs.h"
+#include "sbfs.h"
+#include "mkufs.h"
+#include "usage.h"
+#include "constant.h"
 
 
-static struct option long_opts[] = {
-	
-	{"fs", required_argument, NULL, 'f'}, // Specifies fs type
-	{"filesystem", required_argument, NULL, 'f'},
-	
-	{"bs", required_argument, NULL, 'b'}, // Specifies a bootsector file
-	{"bootsector", required_argument, NULL, 'b'},
 
-	{"ufsbl", no_argument, NULL, 'u'}, // Specifies that we should provide bootloader for the user
-	{"ufsbootloader", no_argument, NULL, 'u'},
 
-	{"noboot", no_argument, NULL, 'n'}, // Specifies no boot Signature and jmp $ 
-
-	{"output", required_argument, NULL, 'o'}, // Specifies the output file
-
-	{NULL, 0, NULL, 0}
-};
-
-static const char opt_string[] = "o:f:b:nu";
-
-void usage();
 
 
 
 int main(int argc, char **argv){
 	
 	int i;
-	enum opt_boot optboot = NOTSET;
-	enum fs_type fstype = NOFS;
-	FILE *fdfsout, fdbootsector;
+	uint8_t buffer[MAX_BUFFER];
+	size_t read = 0;
+	enum opt_boot boot = NOTSET;
+	enum fs_type fstype = NONE;
+	FILE *fdfsout, *fdbootsector, *fdkernelimage;
 	struct stat stats;
-	char *fsout = NULL, *bootsector = NULL, opt;
+	char *fsout = NULL, *bootsector = NULL, *filesystem = NULL, *kernel = NULL, opt;
 	
-	opt ;
 	
-	while ((opt = getopt_long(argc, argv, opt_string, long_opts, NULL ) )!= -1){
-		printf("opt:%c\n",opt);	
+	while ((opt = getopt_long(argc, argv, opt_string, long_opts, NULL ) )!= -1){	
 		switch(opt){
 			case 'o':
 
@@ -73,8 +47,10 @@ int main(int argc, char **argv){
 
 			case 'b':
 
-				if (bootsector == NULL && optboot == NOTSET){
+				if (boot == NOTSET){
+					boot = CUSTOM_BOOTSECTOR;
 					bootsector = optarg;
+					
 				}else{
 					error(0, 0, "You cant specify two output files at the same time");
 					usage();	
@@ -83,8 +59,8 @@ int main(int argc, char **argv){
 
 			case 'f':
 
-				if (fstype == NOFS){
-					fstype = SBFS;
+				if (filesystem == NULL){
+					filesystem = optarg;
 				}else{
 					error(0, 0, "You cant specify two filesystemtypes at the same time");
 					usage();
@@ -93,8 +69,8 @@ int main(int argc, char **argv){
 
 			case 'u':
 
-				if (optboot == NOTSET && bootsector == NULL){
-					optboot = UFSBOOT;
+				if (boot == NOTSET){
+					boot = UFSBOOT;
 				}else{
 					error(0, 0,"You cant sepecify two bootloaders at the same time");
 					usage();
@@ -103,14 +79,28 @@ int main(int argc, char **argv){
 			
 			case 'n':
 				
-				if (optboot == NOTSET && bootsector == NULL){
-					optboot = NOBOOT;
+				if (boot == NOTSET){
+					boot = NOBOOT;
 				}else{
 					error(0, 0,"You cant sepecify two bootloaders at the same time");
 					usage();
 				}
 				break;	
-			
+			case 'k':
+				
+				if (kernel == NULL){
+					kernel = optarg;
+				}else {
+					error(0, 0, "You cant specify two kernels");
+					usage();
+				}
+				break;
+
+			case '?':
+				printf("What happened ? %s\n",optarg);
+				usage();
+				
+
 			default:
 				
 				error(0, 0, "Does not support option <%c,%d>",opt,opt);
@@ -118,29 +108,65 @@ int main(int argc, char **argv){
 		}
 	}
 
+	while (optind < argc){
+		if (fsout == NULL){
+			fsout = argv[optind];
+		}else if (kernel == NULL){
+			kernel = argv[optind];
+		}else {
+			usage();	
+		}
+		optind++;
+	}
 
+	printf("You are creating a filesystem with the following Parameters:\n");
+	printf("Filesystem:<%s>\nBoot Behavior:<%d>\nKernel:<%s>\nInto the file:<%s>\n",filesystem,boot,kernel,fsout);
 
-	fdfsout = fopen(fsout,"rw");
 	
+	if (boot == NOTSET)
+		boot = NOBOOT;
+	if (fsout == NULL)
+		usage();
+	if (kernel == NULL)
+		usage();
+	if (bootsector == NULL && boot != NOBOOT)
+		usage();
+		
+
+
+	fdfsout = fopen(fsout,"w");
 	if (fdfsout == NULL){
 		error(0,errno,"Cannot open File, %s",fsout);
 		usage();
 	}
 	
-	if (fstat(fileno(fdfsout), &stats) < 0){
-		error(0,errno,"fstat() failed");
-		usage();
+	
+	if (boot == NOBOOT){
+		fwrite(&noboot,1,8,fdfsout);
+		
+	}else if(boot == CUSTOM_BOOTSECTOR){
+		
+		fdbootsector = fopen(bootsector,"r");
+		if (fdbootsector == NULL){
+			error(0, errno,"Cannot open File, %s",bootsector);
+			usage();
 		}
+		while (!feof(fdbootsector)){
+			
+			read = fread(buffer, 1, MAX_BUFFER -1, fdbootsector);
+			fwrite(buffer, 1, read, fdfsout);
+
+		}
+		fclose(fdbootsector);
+		
+	}else{
+		usage();	
+	}
 
 
 
 	fclose(fdfsout);
-
+ 
 
 }
 
-
-void usage(){
-	printf("%s\n",USE);
-	exit(-1);
-}

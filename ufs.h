@@ -2,7 +2,7 @@
 #ifndef __UFS_H__
 #define __UFS_H__
 
-#include <stdint.h>>
+#include <stdint.h>
 
 // Unified Filesystems 
 
@@ -21,7 +21,7 @@ typedef struct UFS_HEADER {
 
 typedef enum fs_type {
 	
-	RESERVED = 0,
+	NONE = 0,
 	SBFS
 	
 } fs_type;

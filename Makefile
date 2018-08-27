@@ -1,22 +1,25 @@
 CC=gcc
+LD=gcc
 
-CCFLAGS=
+CCFLAGS= -c -O2
+LDFLAGS= -O2
 
-OBJECTS:=$(wildcard *.c)
+BIN=mkufs
+OBJECTS:=$(patsubst %.c, %.o, $(wildcard *.c))
 HEADERS:=$(wildcard *.h)
-TARGETS:=$(patsubst %.c, %.o, $(OBJECTS))
+
 
 .PHONY: all clean run
 
 
-all: $(TARGETS)
+all: $(BIN)
 
+$(BIN): $(OBJECTS)
+	$(LD) $(LDFLAGS) -o $@ $^
 
-$(TARGETS): %.o : %.c $(HEADERS)
-	$(CC) $(CCFLAGS) $< -o $@
+$(OBJECTS): %.o : %.c $(HEADERS)
+	$(CC) $(CCFLAGS) -o $@ $<
 	
-run: $(TARGETS)
-	./$<
 
 clean:
-	rm -rf $(TARGETS)
+	rm -rf $(BIN) $(OBJECTS)
